@@ -3,6 +3,7 @@ using ExchangeRateUpdater.Api.Validators;
 using ExchangeRateUpdater.Application.Queries.GetExchangeRates;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -80,6 +81,19 @@ public static class ServiceCollectionExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
                 };
             });
+
+        return services;
+    }
+
+    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
+    {
+        // TODO: Use sliding window or token bucket limiter (w/ partition key) for fine-grained control
+        services.AddRateLimiter(rl => rl
+            .AddFixedWindowLimiter("exchange-rates-limit", options =>
+            {
+                options.PermitLimit = 5;
+                options.Window = TimeSpan.FromMinutes(1);
+            }));
 
         return services;
     }

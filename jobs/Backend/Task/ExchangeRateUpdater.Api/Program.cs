@@ -25,6 +25,7 @@ var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSetting
 
 builder.Services.AddOpenTelemetry(builder.Environment.ApplicationName);
 builder.Services.AddDistributedRedisCache(builder.Environment.ApplicationName, redisConnectionString);
+builder.Services.AddRateLimiting();
 builder.Services.AddValidators();
 builder.Services.AddMediatr();
 builder.Services.AddInfrastructure();
@@ -50,6 +51,7 @@ app.UseHttpsRedirection();
 app.UseOutputCache();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapPost("/token", async (
     [FromBody] ClientCredentials credentials,
@@ -68,6 +70,7 @@ app.MapGet("/exchange-rates", async(
     await ExchangeRatesHandler.GetExchangeRates(currencyCodes, date, mediator, validator, cancellationToken))
     .CacheOutput(x => x.Expire(TimeSpan.FromMinutes(5)).Tag("exchange-rates"))
     .RequireAuthorization()
+    .RequireRateLimiting("exchange-rates-limit")
     .WithName("GetExchangeRates")
     .WithOpenApi();
 
