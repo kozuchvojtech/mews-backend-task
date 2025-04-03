@@ -1,4 +1,5 @@
 using System.Text;
+using ExchangeRateUpdater.Api.Caching;
 using ExchangeRateUpdater.Api.Validators;
 using ExchangeRateUpdater.Application.Queries.GetExchangeRates;
 using FluentValidation;
@@ -36,7 +37,11 @@ public static class ServiceCollectionExtensions
         string applicationName, 
         string redisConnectionString)
     {
-        services.AddOutputCache()
+        services.AddOutputCache(options =>
+            {
+                options.AddBasePolicy(x => 
+                    x.AddPolicy<CustomPolicy>(), excludeDefaultPolicy: true);
+            })
             .AddStackExchangeRedisCache(x =>
             {
                 x.InstanceName = applicationName;

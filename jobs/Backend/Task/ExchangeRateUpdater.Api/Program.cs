@@ -59,6 +59,8 @@ app.MapPost("/token", async (
     .WithName("GenerateToken")
     .WithOpenApi();
 
+// TODO: Secure authenticated endpoints caching by varying based on user claims
+
 app.MapGet("/exchange-rates", async(
     [FromQuery] string[] currencyCodes,
     [FromQuery] DateTime? date,
@@ -66,7 +68,10 @@ app.MapGet("/exchange-rates", async(
     [FromServices] IValidator<GetExchangeRatesRequest> validator,
     CancellationToken cancellationToken) => 
     await ExchangeRatesHandler.GetExchangeRates(currencyCodes, date, mediator, validator, cancellationToken))
-    .CacheOutput(x => x.Expire(TimeSpan.FromMinutes(5)).Tag("exchange-rates"))
+    .CacheOutput(x => 
+        x.Expire(TimeSpan.FromMinutes(5))
+         .Tag("exchange-rates")
+        , excludeDefaultPolicy: true)
     .RequireAuthorization()
     .WithName("GetExchangeRates")
     .WithOpenApi();
